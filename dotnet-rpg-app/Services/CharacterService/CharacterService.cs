@@ -4,14 +4,17 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using AutoMapper;
+using dotnet_rpg_app.Data;
 using dotnet_rpg_app.Dtos.Character;
 using dotnet_rpg_app.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace dotnet_rpg_app.Services.CharacterService
 {
     public class CharacterService : ICharacterService
     {
         private readonly IMapper _mapper;
+        private readonly DataContext _context;
 
         private static readonly List<Character> Characters = new List<Character>
         {
@@ -19,16 +22,18 @@ namespace dotnet_rpg_app.Services.CharacterService
             new Character {Id = 1, Name = "Sam", Class = RpgClasses.Assassin}
         };
         
-        public CharacterService(IMapper mapper)
+        public CharacterService(IMapper mapper, DataContext context)
         {
             _mapper = mapper;
+            _context = context;
         }
 
         public async Task<ServiceResponse<List<GetCharacterDto>>> GetAllCharacters()
         {
+            List<Character> dbCharacters = await _context.Characters.ToListAsync();
             return new ServiceResponse<List<GetCharacterDto>>
             {
-                Data = Characters.Select(ch => _mapper.Map<GetCharacterDto>(ch)).ToList()
+                Data = dbCharacters.Select(ch => _mapper.Map<GetCharacterDto>(ch)).ToList()
             };
         }
         
@@ -36,7 +41,7 @@ namespace dotnet_rpg_app.Services.CharacterService
         {
             return new ServiceResponse<GetCharacterDto>
             {
-                Data = _mapper.Map<GetCharacterDto>(Characters.FirstOrDefault(ch => ch.Id == id)),
+                Data = _mapper.Map<GetCharacterDto>(await  _context.Characters.FirstOrDefaultAsync(ch => ch.Id == id)),
             };
         } 
 
