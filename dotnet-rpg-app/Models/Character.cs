@@ -10,5 +10,6 @@
         public int Intelligence { get; set; } = 10;
         public int Luck { get; set; } = 10;
         public RpgClasses Class { get; set; } = RpgClasses.Necromancer;
+        public User User { get; set; }
     }
 }
