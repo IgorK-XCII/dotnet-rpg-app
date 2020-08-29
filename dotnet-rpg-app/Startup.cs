@@ -36,8 +36,6 @@ namespace dotnet_rpg_app
                 app.UseDeveloperExceptionPage();
             }
 
-            // app.UseHttpsRedirection();
-
             app.UseRouting();
 
             app.UseAuthorization();
