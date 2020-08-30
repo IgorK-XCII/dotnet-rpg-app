@@ -2,7 +2,7 @@
 {
     public enum RpgClasses
     {
-        Paladin,
+        Paladin = 1,
         Barbarian,
         Thief,
         Assassin,

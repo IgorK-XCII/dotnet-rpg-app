@@ -1,4 +1,6 @@
-﻿namespace dotnet_rpg_app.Models
+﻿using System.Collections.Generic;
+
+namespace dotnet_rpg_app.Models
 {
     public class Character
     {
@@ -11,5 +13,7 @@
         public int Luck { get; set; } = 10;
         public RpgClasses Class { get; set; } = RpgClasses.Necromancer;
         public User User { get; set; }
+        public Weapon Weapon { get; set; }
+        public List<CharacterSkill> CharacterSkills { get; set; }
     }
 }
