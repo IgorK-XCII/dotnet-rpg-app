@@ -18,6 +18,8 @@ namespace dotnet_rpg_app
             CreateMap<AddWeaponDto, Weapon>();
             CreateMap<Weapon, GetWeaponDto>();
             CreateMap<Skill, GetSkillDto>();
+            CreateMap<GetCharacterDto, Character>();
+            CreateMap<Character, UpdateCharacterDto>();
         }
     }
 }

@@ -47,7 +47,7 @@ namespace dotnet_rpg_app.Services.CharacterService
                     .Include(ch => ch.CharacterSkills).ThenInclude(cs => cs.Skill)
                     .FirstOrDefaultAsync(ch => ch.Id == id && ch.User.Id == GetUserId())),
             };
-        } 
+        }
 
         public async Task<ServiceResponse<List<GetCharacterDto>>> AddCharacter(AddCharacterDto newCharacter)
         {
