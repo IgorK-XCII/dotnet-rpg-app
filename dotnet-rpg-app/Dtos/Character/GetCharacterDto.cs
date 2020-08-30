@@ -1,4 +1,7 @@
-﻿using dotnet_rpg_app.Models;
+﻿using System.Collections.Generic;
+using dotnet_rpg_app.Dtos.Skill;
+using dotnet_rpg_app.Dtos.Weapon;
+using dotnet_rpg_app.Models;
 
 namespace dotnet_rpg_app.Dtos.Character
 {
@@ -12,5 +15,7 @@ namespace dotnet_rpg_app.Dtos.Character
         public int Intelligence { get; set; } = 10;
         public int Luck { get; set; } = 10;
         public RpgClasses Class { get; set; } = RpgClasses.Necromancer;
+        public GetWeaponDto Weapon { get; set; }
+        public List<GetSkillDto> Skills { get; set; }
     }
 }
