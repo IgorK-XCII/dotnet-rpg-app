@@ -21,7 +21,7 @@ namespace dotnet_rpg_app.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> AddCharacterSkill(AddCharacterSkillDto newCharacterSkill)
+        public async Task<IActionResult> AddCharacterSkill(AddCharacterSkillDto newCharacterSkill)
         {
             ServiceResponse<GetCharacterDto> response = await _characterSkillService.AddCharacterSkill(newCharacterSkill);
             if (!response.Success) return BadRequest(response);
