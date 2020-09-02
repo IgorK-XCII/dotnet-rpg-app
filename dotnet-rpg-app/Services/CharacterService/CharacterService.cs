@@ -38,15 +38,27 @@ namespace dotnet_rpg_app.Services.CharacterService
             };
         }
         
-        public async Task<ServiceResponse<GetCharacterDto>> GetCharacterById(int id)
+        public async Task<ServiceResponse<GetCharacterDto>> GetCharacterDtoById(int id)
         {
+            Character character = await GetCharacterById(id);
+            if (character == null) return new ServiceResponse<GetCharacterDto>
+            {
+                Success = false,
+                Message = "Character not found!"
+            };
             return new ServiceResponse<GetCharacterDto>
             {
-                Data = _mapper.Map<GetCharacterDto>(await  _context.Characters
-                    .Include(ch => ch.Weapon)
-                    .Include(ch => ch.CharacterSkills).ThenInclude(cs => cs.Skill)
-                    .FirstOrDefaultAsync(ch => ch.Id == id && ch.User.Id == GetUserId())),
+                Data = _mapper.Map<GetCharacterDto>(character)
             };
+        }
+
+        public async Task<Character> GetCharacterById(int id)
+        {
+            return await _context.Characters
+                .Include(ch => ch.Weapon)
+                .Include(ch => ch.CharacterSkills)
+                .ThenInclude(cs => cs.Skill)
+                .FirstOrDefaultAsync(ch => ch.Id == id && ch.User.Id == GetUserId());
         }
 
         public async Task<ServiceResponse<List<GetCharacterDto>>> AddCharacter(AddCharacterDto newCharacter)
@@ -68,23 +80,25 @@ namespace dotnet_rpg_app.Services.CharacterService
 
         public async Task<ServiceResponse<GetCharacterDto>> UpdateCharacter(UpdateCharacterDto updatedCharacter)
         {
-            Character character = await _context.Characters.Include(ch => ch.User).FirstOrDefaultAsync(ch => ch.Id == updatedCharacter.Id);
-            if (character?.User.Id == GetUserId())
+            Character character = await _context.Characters.Include(ch => ch.User)
+                .FirstOrDefaultAsync(ch => ch.Id == updatedCharacter.Id && ch.User.Id == GetUserId());
+            if (character == null) return new ServiceResponse<GetCharacterDto>
             {
-                PropertyInfo[] newProperty =  typeof(UpdateCharacterDto).GetProperties();
-                for (int i = 0; i < newProperty.Length; i++)
-                {
-                    typeof(Character).GetProperties()[i].SetValue(character, typeof(UpdateCharacterDto).GetProperties()[i].GetValue(updatedCharacter));
-                }
-                
-                _context.Characters.Update(character);
-                await _context.SaveChangesAsync();                
+                Success = false,
+                Message = "Character not found!"
+            };
+            
+            PropertyInfo[] newProperty =  typeof(UpdateCharacterDto).GetProperties();
+            for (int i = 0; i < newProperty.Length; i++)
+            {
+                typeof(Character).GetProperties()[i].SetValue(character, typeof(UpdateCharacterDto).GetProperties()[i].GetValue(updatedCharacter));
             }
+            
+            _context.Characters.Update(character);
+            await _context.SaveChangesAsync();                
             return new ServiceResponse<GetCharacterDto>
             {
                 Data = _mapper.Map<GetCharacterDto>(character),
-                Message = character == null ? "Character not found!" : null,
-                Success = character != null
             };
         }
 

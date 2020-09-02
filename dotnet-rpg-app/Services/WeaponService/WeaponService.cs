@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using dotnet_rpg_app.Data;
 using dotnet_rpg_app.Dtos.Character;
 using dotnet_rpg_app.Dtos.Weapon;
 using dotnet_rpg_app.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+using dotnet_rpg_app.Services.CharacterService;
 
 namespace dotnet_rpg_app.Services.WeaponService
 {
@@ -15,21 +13,19 @@ namespace dotnet_rpg_app.Services.WeaponService
     {
         private readonly IMapper _mapper;
         private readonly DataContext _context;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ICharacterService _characterService;
 
-        public WeaponService(IMapper mapper, DataContext context, IHttpContextAccessor httpContextAccessor)
+        public WeaponService(IMapper mapper, DataContext context, ICharacterService characterService)
         {
             _context = context;
-            _httpContextAccessor = httpContextAccessor;
+            _characterService = characterService;
             _mapper = mapper;
         }
         public async Task<ServiceResponse<GetCharacterDto>> AddWeapon(AddWeaponDto newWeapon)
         {
             try
             {
-                Character character = await _context.Characters.FirstAsync(ch =>
-                    ch.Id == newWeapon.CharacterId && ch.User.Id ==
-                    int.Parse(_httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)));
+                Character character = await _characterService.GetCharacterById(newWeapon.CharacterId);
                 Weapon weapon = _mapper.Map<Weapon>(newWeapon);
                 await _context.Weapons.AddAsync(weapon);
                 await _context.SaveChangesAsync();
