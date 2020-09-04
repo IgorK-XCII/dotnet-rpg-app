@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using AutoMapper;
 using dotnet_rpg_app.Dtos.Character;
 using dotnet_rpg_app.Dtos.Fight;

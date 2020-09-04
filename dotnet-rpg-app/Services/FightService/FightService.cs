@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using dotnet_rpg_app.Data;
@@ -9,7 +8,6 @@ using dotnet_rpg_app.Dtos.Character;
 using dotnet_rpg_app.Dtos.Fight;
 using dotnet_rpg_app.Models;
 using dotnet_rpg_app.Services.CharacterService;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace dotnet_rpg_app.Services.FightService
@@ -19,14 +17,12 @@ namespace dotnet_rpg_app.Services.FightService
         private readonly IMapper _mapper;
         private readonly ICharacterService _characterService;
         private readonly DataContext _context;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public FightService(IMapper mapper, ICharacterService characterService, DataContext context, IHttpContextAccessor httpContextAccessor)
+        public FightService(IMapper mapper, ICharacterService characterService, DataContext context)
         {
             _mapper = mapper;
             _characterService = characterService;
             _context = context;
-            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<ServiceResponse<AttackResultDto>> WeaponAttack(WeaponAttackDto weaponAttack)
@@ -34,27 +30,18 @@ namespace dotnet_rpg_app.Services.FightService
             ServiceResponse<AttackResultDto> response = new ServiceResponse<AttackResultDto>();
             try
             {
-                ServiceResponse<GetCharacterDto> attackerResponse = await _characterService.GetCharacterById(weaponAttack.AttackerId);
-                Character attacker = _mapper.Map<Character>(attackerResponse.Data);
+                Character attacker = await _characterService.GetCharacterById(weaponAttack.AttackerId, AuthType.WithAuth);
+                if (attacker == null) throw new Exception("Attacker not found.");
 
-                if (!attackerResponse.Success) throw new Exception("Attacker not found.");
-
-                Character defender = await _context.Characters.FirstOrDefaultAsync(ch => ch.Id == weaponAttack.DefenderId);
+                Character defender = await _characterService.GetCharacterById(weaponAttack.DefenderId, AuthType.NoneAuth);
                 if (defender == null) throw new Exception("Defender not found.");
 
                 int damage = DoWeaponAttack(attacker, defender);
                 if (defender.Health <= 0) response.Message = $"{defender.Name} has fallen!";
 
                 await _characterService.UpdateCharacter(_mapper.Map<UpdateCharacterDto>(defender));
-                
-                response.Data = new AttackResultDto
-                {
-                    Attacker = attacker.Name,
-                    AttackerHp = attacker.Health,
-                    Defender = defender.Name,
-                    DefenderHp = defender.Health,
-                    Damage = damage,
-                };
+
+                response.Data = AttackResultHandler(attacker, defender, damage);
             }
             catch (Exception e)
             {
@@ -70,31 +57,19 @@ namespace dotnet_rpg_app.Services.FightService
             ServiceResponse<AttackResultDto> response = new ServiceResponse<AttackResultDto>();
             try
             {
-                Character attacker = await _context.Characters
-                    .Include(ch => ch.CharacterSkills)
-                    .ThenInclude(cs => cs.Skill)
-                    .FirstOrDefaultAsync(ch => ch.Id == skillAttack.AttackerId && ch.User.Id ==
-                        int.Parse(_httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)));
-                
+                Character attacker = await _characterService.GetCharacterById(skillAttack.AttackerId, AuthType.WithAuth);
                 if (attacker == null) throw new Exception("Attacker not found.");
                 
                 Skill skill = attacker.CharacterSkills.Select(cs => cs.Skill).FirstOrDefault(s => s.Id == skillAttack.SkillId);
                 if (skill == null) throw new Exception("Skill not found");
                 
-                Character defender = await _context.Characters.FirstOrDefaultAsync(ch => ch.Id == skillAttack.DefenderId);
+                Character defender = await _characterService.GetCharacterById(skillAttack.DefenderId, AuthType.NoneAuth);
                 if (defender == null) throw new Exception("Defender not found.");
 
                 int damage = DoSkillAttack(attacker, defender, skill);
                 if (defender.Health <= 0) response.Message = $"{defender.Name} has fallen!";
 
-                response.Data = new AttackResultDto
-                {
-                    Attacker = attacker.Name,
-                    AttackerHp = attacker.Health,
-                    Defender = defender.Name,
-                    DefenderHp = defender.Health,
-                    Damage = damage,
-                };
+                response.Data = AttackResultHandler(attacker, defender, damage);
             }
             catch (Exception e)
             {
@@ -110,11 +85,7 @@ namespace dotnet_rpg_app.Services.FightService
             ServiceResponse<FightResultDto> response = new ServiceResponse<FightResultDto>();
             try
             {
-                List<Character> characters = await _context.Characters
-                    .Include(ch => ch.Weapon)
-                    .Include(ch => ch.CharacterSkills)
-                    .ThenInclude(cs => cs.Skill)
-                    .Where(ch => fightRequest.CharacterIds.Contains(ch.Id)).ToListAsync();
+                List<Character> characters = await _characterService.GetGroupOfCharacters(fightRequest.CharacterIds);
                 
                 response.Data = new FightResultDto();
 
@@ -130,10 +101,10 @@ namespace dotnet_rpg_app.Services.FightService
                         string attackUsed;
                         
                         bool useWeapon = new Random().Next(2) == 0;
-                        if (useWeapon)
+                        if (useWeapon || attacker.CharacterSkills.Count == 0)
                         {
                             damage = DoWeaponAttack(attacker, defender);
-                            attackUsed = attacker.Weapon.Name;
+                            attackUsed = attacker.Weapon?.Name ?? "Fist";
                         }
                         else
                         {
@@ -166,7 +137,6 @@ namespace dotnet_rpg_app.Services.FightService
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
                 response.Success = false;
                 response.Message = e.Message;
             }
@@ -186,6 +156,18 @@ namespace dotnet_rpg_app.Services.FightService
                 Data = characters.Select(ch => _mapper.Map<HighScoreDto>(ch)).ToList(),
                 Message = characters.Count == 0 ? "Characters haven't fought yet!" : null,
                 Success = characters.Count != 0
+            };
+        }
+        
+        private AttackResultDto AttackResultHandler(Character attacker, Character defender, int damage)
+        {
+            return new AttackResultDto
+            {
+                Attacker = attacker.Name,
+                AttackerHp = attacker.Health,
+                Defender = defender.Name,
+                DefenderHp = defender.Health,
+                Damage = damage,
             };
         }
 
