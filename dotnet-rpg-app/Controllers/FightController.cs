@@ -19,37 +19,26 @@ namespace dotnet_rpg_app.Controllers
         {
             _fightService = fightService;
         }
-        
+
         [HttpPost("weaponAttack")]
-        public async Task<IActionResult> WeaponAttack(WeaponAttackDto weaponAttack)
-        {
-            ServiceResponse<AttackResultDto> result = await _fightService.WeaponAttack(weaponAttack);
-            if (!result.Success) return NotFound(result);
-            return Ok(result);
-        }
+        public async Task<IActionResult> WeaponAttack(WeaponAttackDto weaponAttack) =>
+            ActionResultHandler(await _fightService.WeaponAttack(weaponAttack));
 
         [HttpPost("skillAttack")]
-        public async Task<IActionResult> SkillAttack(SkillAttackDto skillAttack)
-        {
-            ServiceResponse<AttackResultDto> result = await _fightService.SkillAttack(skillAttack);
-            if (!result.Success) return NotFound(result);
-            return Ok(result);
-        }
+        public async Task<IActionResult> SkillAttack(SkillAttackDto skillAttack) =>
+            ActionResultHandler(await _fightService.SkillAttack(skillAttack));
 
         [HttpPost]
-        public async Task<IActionResult> Fight(FightRequestDto fightRequest)
-        {
-            ServiceResponse<FightResultDto> result = await _fightService.Fight(fightRequest);
-            if (!result.Success) return NotFound(result);
-            return Ok(result);
-        }
+        public async Task<IActionResult> Fight(FightRequestDto fightRequest) =>
+            ActionResultHandler(await _fightService.Fight(fightRequest));
 
         [HttpGet]
-        public async Task<IActionResult> GetHighScore()
+        public async Task<IActionResult> GetHighScore() => ActionResultHandler(await _fightService.GetHighScore());
+        
+        private IActionResult ActionResultHandler<T>(ServiceResponse<T> response)
         {
-            ServiceResponse<List<HighScoreDto>> result = await _fightService.GetHighScore();
-            if (!result.Success) return NotFound(result);
-            return Ok(result);
+            if (!response.Success) return NotFound(response);
+            return Ok(response);
         }
     }
 }

@@ -18,19 +18,15 @@ namespace dotnet_rpg_app.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(UserRegisterDto request)
-        {
-            ServiceResponse<int> response =
-                await _authRepo.Register(new User {Username = request.Username}, request.Password);
-            if (!response.Success) return BadRequest(response);
-            return Ok(response);
-        }
+        public async Task<IActionResult> Register(UserRegisterDto request) =>
+            ActionResultHandler(await _authRepo.Register(new User {Username = request.Username}, request.Password));
         
         [HttpPost("login")]
-        public async Task<IActionResult> Login(UserLoginDto request)
+        public async Task<IActionResult> Login(UserLoginDto request) =>
+            ActionResultHandler(await _authRepo.Login(request.Username, request.Password));
+        
+        private IActionResult ActionResultHandler<T>(ServiceResponse<T> response)
         {
-            ServiceResponse<string> response =
-                await _authRepo.Login(request.Username, request.Password);
             if (!response.Success) return BadRequest(response);
             return Ok(response);
         }

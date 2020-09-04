@@ -26,7 +26,7 @@ namespace dotnet_rpg_app.Services.CharacterSkillService
         {
             try
             {
-                Character character = await _characterService.GetCharacterById(newCharacterSkill.CharacterId);
+                Character character = await _characterService.GetCharacterById(newCharacterSkill.CharacterId, AuthType.WithAuth);
                 if (character == null) throw new Exception("Character not found!");
                 
                 Skill skill = await _context.Skills.FirstAsync(sk => sk.Id == newCharacterSkill.SkillId);

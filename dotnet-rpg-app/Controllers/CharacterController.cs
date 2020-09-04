@@ -24,29 +24,24 @@ namespace dotnet_rpg_app.Controllers
         public async Task<IActionResult> Get() => Ok(await _characterService.GetAllCharacters());
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetSingle(int id)
-        {
-            ServiceResponse<GetCharacterDto> response = await _characterService.GetCharacterDtoById(id);
-            if (response.Data == null) return NotFound(response);
-            return Ok(response);
-        }
+        public async Task<IActionResult> GetSingle(int id) =>
+            ActionResultHandler(await _characterService.GetCharacterDtoById(id));
 
         [HttpPost]
-        public async Task<IActionResult> AddCharacter(AddCharacterDto newCharacter) => Ok(await _characterService.AddCharacter(newCharacter));
+        public async Task<IActionResult> AddCharacter(AddCharacterDto newCharacter) =>
+            ActionResultHandler(await _characterService.AddCharacter(newCharacter));
 
         [HttpPut]
-        public async Task<IActionResult> UpdateCharacter(UpdateCharacterDto updatedCharacter)
-        {
-            ServiceResponse<GetCharacterDto> response = await _characterService.UpdateCharacter(updatedCharacter);
-            if (response.Data == null) return NotFound(response);
-            return Ok(response);
-        }
+        public async Task<IActionResult> UpdateCharacter(UpdateCharacterDto updatedCharacter) =>
+            ActionResultHandler(await _characterService.UpdateCharacter(updatedCharacter));
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCharacter(int id)
+        public async Task<IActionResult> DeleteCharacter(int id) =>
+            ActionResultHandler(await _characterService.DeleteCharacter(id));
+        
+        private IActionResult ActionResultHandler<T>(ServiceResponse<T> response)
         {
-            ServiceResponse<List<GetCharacterDto>> response = await _characterService.DeleteCharacter(id);
-            if (response.Data == null) return NotFound(response);
+            if (!response.Success) return NotFound(response);
             return Ok(response);
         }
     }

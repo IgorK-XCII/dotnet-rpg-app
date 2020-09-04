@@ -25,7 +25,7 @@ namespace dotnet_rpg_app.Services.WeaponService
         {
             try
             {
-                Character character = await _characterService.GetCharacterById(newWeapon.CharacterId);
+                Character character = await _characterService.GetCharacterById(newWeapon.CharacterId, AuthType.WithAuth);
                 Weapon weapon = _mapper.Map<Weapon>(newWeapon);
                 await _context.Weapons.AddAsync(weapon);
                 await _context.SaveChangesAsync();

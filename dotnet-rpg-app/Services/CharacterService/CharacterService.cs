@@ -40,7 +40,7 @@ namespace dotnet_rpg_app.Services.CharacterService
         
         public async Task<ServiceResponse<GetCharacterDto>> GetCharacterDtoById(int id)
         {
-            Character character = await GetCharacterById(id);
+            Character character = await GetCharacterById(id, AuthType.WithAuth);
             if (character == null) return new ServiceResponse<GetCharacterDto>
             {
                 Success = false,
@@ -52,13 +52,31 @@ namespace dotnet_rpg_app.Services.CharacterService
             };
         }
 
-        public async Task<Character> GetCharacterById(int id)
+        public async Task<Character> GetCharacterById(int id, AuthType auth)
+        {
+            var request = _context.Characters
+                .Include(ch => ch.Weapon)
+                .Include(ch => ch.CharacterSkills)
+                .ThenInclude(cs => cs.Skill);
+
+            switch (auth)
+            {
+                case AuthType.WithAuth:
+                    return await request.FirstOrDefaultAsync(ch => ch.Id == id && ch.User.Id == GetUserId());
+                case AuthType.NoneAuth:
+                    return await request.FirstOrDefaultAsync(ch => ch.Id == id);
+                default:
+                    goto case AuthType.WithAuth;
+            }
+        }
+
+        public async Task<List<Character>> GetGroupOfCharacters(IEnumerable<int> characters)
         {
             return await _context.Characters
                 .Include(ch => ch.Weapon)
                 .Include(ch => ch.CharacterSkills)
                 .ThenInclude(cs => cs.Skill)
-                .FirstOrDefaultAsync(ch => ch.Id == id && ch.User.Id == GetUserId());
+                .Where(ch => characters.Contains(ch.Id)).ToListAsync();
         }
 
         public async Task<ServiceResponse<List<GetCharacterDto>>> AddCharacter(AddCharacterDto newCharacter)
